@@ -1,29 +1,18 @@
 import express from 'express';
-import bodyParser from 'body-parser';
-import {locations} from "./locations"
+import {ApolloServer} from 'apollo-server-express'; 
+import {typeDefs, resolvers,} from './graphql';
+
+
+
 const app = express();
 const port = 9000;
 
-app.use(bodyParser.json({limit: '50mb'}));
 
 
-//get locations
-app.get("/locations", (_req, res) => {
-    return res.send(locations);
-});
-//delete-locations
- app.post("/delete-location", (req, res) => { 
-    const id:string = req.body.id;
+const server = new ApolloServer({typeDefs, resolvers});
+//need to add the server.start function for Apollo 3
+server.start().then(_res => {
+server.applyMiddleware({app, path: '/api'});
 
-    for (let i = 0; i < locations.length; i++) {
-        if (locations[i].id === id) {
-            return res.send(locations.splice(i, 1));
-        }
-    }
-    return res.send("failed to delete locations");
- });
-
- 
 app.listen(port, () => console.log(`Example app listening on port ${port}`));
-
- 
+});
