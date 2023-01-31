@@ -1,7 +1,12 @@
-import React from 'react'
-import {server} from '../../lib/api'
-import {ListingsData, DeleteListingData, DeleteListingVariables} from './types'
- 
+import React, { useEffect, useState } from "react";
+import { server } from "../../lib/api";
+import {
+  DeleteListingData,
+  DeleteListingVariables,
+  Listing,
+  ListingsData,
+} from "./types";
+
 const LISTINGS = `
   query Listings{
     listings{
@@ -28,31 +33,45 @@ mutation DeleteListing($id: ID!){
 `;
 
 interface Props {
-  title: string
+  title: string;
 }
 
-export const Listings = ({title}:Props) => {
+export const Listings = ({ title }: Props) => {
+  const [listings, setListings] = useState<Listing[] | null>(null);
+
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
   const fetchListings = async () => {
-    try {
-      const {data} = await server.fetch<ListingsData>({query: LISTINGS});
-      console.log(data);
-    } catch (error) {
-      throw new Error('Failed to fetch listings');
-    }
+    const { data } = await server.fetch<ListingsData>({ query: LISTINGS });
+    setListings(data.listings);
   };
-  const deleteListing = async () => {
-    try {
-      const {data} = await server.fetch<DeleteListingData, DeleteListingVariables>({query: DELETE_LISTING, variables: {id: '637d4ab8cc0ef32e63e32b2f'}});
-      console.log(data);
-    } catch (error) {
-      throw new Error('Failed to delete listing');
-    }
+  const deleteListing = async (id: string) => {
+    await server.fetch<DeleteListingData, DeleteListingVariables>({
+      query: DELETE_LISTING,
+      variables: { id },
+    });
+    fetchListings();
   };
+
+  const listingList = listings ? (
+    <ul>
+      {listings.map((listing) => {
+        return (
+          <li key={listing.id}>
+            {listing.title}{" "}
+            <button onClick={() => deleteListing(listing.id)}>Delete</button>
+          </li>
+        );
+      })}
+    </ul>
+  ) : null;
+
   return (
     <div>
-    <h2>{title}</h2>
-    <button onClick={fetchListings}>Query Listings!</button>
-    <button onClick={deleteListing}>Delete a Listing!</button>
+      <h2>{title}</h2>
+      {listingList}
     </div>
-  )
+  );
 };
