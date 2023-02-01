@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { server } from "../../lib/api";
+import React from "react";
+import { server, useQuery } from "../../lib/api";
 import {
   DeleteListingData,
   DeleteListingVariables,
-  Listing,
   ListingsData,
 } from "./types";
 
@@ -37,24 +36,16 @@ interface Props {
 }
 
 export const Listings = ({ title }: Props) => {
-  const [listings, setListings] = useState<Listing[] | null>(null);
+  const { data, loading, refetch } = useQuery<ListingsData>(LISTINGS);
 
-  useEffect(() => {
-    fetchListings();
-  }, []);
-
-  const fetchListings = async () => {
-    const { data } = await server.fetch<ListingsData>({ query: LISTINGS });
-    setListings(data.listings);
-  };
   const deleteListing = async (id: string) => {
     await server.fetch<DeleteListingData, DeleteListingVariables>({
       query: DELETE_LISTING,
       variables: { id },
     });
-    fetchListings();
+    refetch();
   };
-
+  const listings = data ? data.listings : null;
   const listingList = listings ? (
     <ul>
       {listings.map((listing) => {
@@ -68,6 +59,9 @@ export const Listings = ({ title }: Props) => {
     </ul>
   ) : null;
 
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
   return (
     <div>
       <h2>{title}</h2>
