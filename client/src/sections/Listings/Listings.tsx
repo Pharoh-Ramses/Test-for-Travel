@@ -1,5 +1,6 @@
 import React from "react";
-import { server, useQuery } from "../../lib/api";
+import { TypeVariable } from "typescript";
+import { useMutation, useQuery } from "../../lib/api";
 import {
   DeleteListingData,
   DeleteListingVariables,
@@ -36,13 +37,15 @@ interface Props {
 }
 
 export const Listings = ({ title }: Props) => {
-  const { data, loading, refetch } = useQuery<ListingsData>(LISTINGS);
+  const { data, loading, refetch, error } = useQuery<ListingsData>(LISTINGS);
 
-  const deleteListing = async (id: string) => {
-    await server.fetch<DeleteListingData, DeleteListingVariables>({
-      query: DELETE_LISTING,
-      variables: { id },
-    });
+  const [
+    deleteListing,
+    { loading: delteListingLoading, error: deleteListingError },
+  ] = useMutation<DeleteListingData, DeleteListingVariables>(DELETE_LISTING);
+
+  const handleDeleteListing = async (id: string) => {
+    await deleteListing({ id });
     refetch();
   };
   const listings = data ? data.listings : null;
@@ -52,7 +55,9 @@ export const Listings = ({ title }: Props) => {
         return (
           <li key={listing.id}>
             {listing.title}{" "}
-            <button onClick={() => deleteListing(listing.id)}>Delete</button>
+            <button onClick={() => handleDeleteListing(listing.id)}>
+              Delete
+            </button>
           </li>
         );
       })}
@@ -62,10 +67,21 @@ export const Listings = ({ title }: Props) => {
   if (loading) {
     return <h2>Loading...</h2>;
   }
+  if (error) {
+    return <h2>Uh oh! Something went wrong - please try again later</h2>;
+  }
+  const deleteListingLoadingMessage = delteListingLoading ? (
+    <h4>Deletion in progress...</h4>
+  ) : null;
+  const deleteListingErrorMessage = deleteListingError ? (
+    <h4>Uh oh! Something went wrong with deleting - please try again later</h4>
+  ) : null;
   return (
     <div>
       <h2>{title}</h2>
       {listingList}
+      {deleteListingLoadingMessage}
+      {deleteListingErrorMessage}
     </div>
   );
 };
